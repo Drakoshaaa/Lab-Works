@@ -14,9 +14,11 @@ struct String{
 void printstr(ofstream *fileout, String *Text);
 unsigned char getmark(ifstream *filein);
 void str_in(ifstream *filein, String *Text, int size);
+void Process(String *Text, int *size);
 
 int main() {
     ifstream filein(FILEIN);
+    ofstream fileout(FILEOUT);
 
 
     if (!filein.is_open()) {
@@ -28,128 +30,43 @@ int main() {
     cout << "Выполнил Решетников Семён, группа 5352.\n\n";
 
     unsigned char mark;
-    int size;
+    int size = 0, fsize;
 
     mark = getmark(&filein);
     if (mark == 0) return 0;
 
-    filein >> size;   // читаем количество символов
 
-    if (size <= 0) {
+    filein >> fsize;   // читаем количество символов
+    filein.get(); 
+
+    
+    if (fsize <= 0) {
         cerr << "Ошибка: Некорректный размер строки.\n";
         return 0;
     }
 
+    int pos = filein.tellg();
+
+    // Считаем реальное количество символов
+    unsigned char ch;
+    while (filein >> noskipws >> ch && size < fsize){
+        size++;
+    }
+    
     String Text;
     Text.data = new char[size + 1];
     Text.mark = mark;
 
-    filein >> noskipws;  // чтобы читать пробелы
-    filein.get();        // убрать перевод строки после числа
+    filein.clear();
+    filein.seekg(pos, ios::beg);
 
     str_in(&filein, &Text, size);
-
-    bool changed = true;
-    while (changed) {
-        changed = false;
-        int pos = 0; // текущая позиция в строке
-
-        while (pos < size) {
-            // Пропускаем пробелы и переводы строк
-            while (pos < size && (Text.data[pos] == ' ' || Text.data[pos] == '\n')) {
-                pos++;
-            }
-            if (pos >= size) break;
-
-            int wordStart = pos;
-            int wordEnd = wordStart;
-            while (wordEnd < size && Text.data[wordEnd] != ' ' && Text.data[wordEnd] != '\n') {
-                wordEnd++;
-            }
-            if (wordEnd >= size) break; // дошли до конца
-
-            char lastChar = Text.data[wordEnd - 1];
-
-            // Поиск ближайшего справа слова, начинающегося с lastChar
-            int searchPos = wordEnd;
-            int foundStart = -1, foundEnd = -1;
-            while (searchPos < size) {
-                // Пропускаем разделители
-                while (searchPos < size && (Text.data[searchPos] == ' ' || Text.data[searchPos] == '\n')) {
-                    searchPos++;
-                }
-                if (searchPos >= size) break;
-
-                if (Text.data[searchPos] == lastChar) {
-                    foundStart = searchPos;
-                    foundEnd = foundStart;
-                    while (foundEnd < size && Text.data[foundEnd] != ' ' && Text.data[foundEnd] != '\n') {
-                        foundEnd++;
-                    }
-                    break;
-                } else {
-                    // Пропускаем неподходящее слово
-                    while (searchPos < size && Text.data[searchPos] != ' ' && Text.data[searchPos] != '\n') {
-                        searchPos++;
-                    }
-                }
-            }
-
-            if (foundStart != -1) {
-                // Создаем новую строку
-                char* newData = new char[size + (wordEnd - wordStart) + 1]; // достаточно
-                int newPos = 0;
-
-                // Копируем часть до начала текущего слова
-                for (int i = 0; i < wordStart; i++) {
-                    newData[newPos++] = Text.data[i];
-                }
-
-                // Копируем промежуток от конца текущего слова до начала найденного
-                // Если текущее слово было первым (wordStart == 0), пропускаем первый разделитель
-                int startGap = (wordStart == 0) ? wordEnd + 1 : wordEnd;
-                for (int i = startGap; i < foundStart; i++) {
-                    newData[newPos++] = Text.data[i];
-                }
-
-                // Копируем текущее слово
-                for (int i = wordStart; i < wordEnd; i++) {
-                    newData[newPos++] = Text.data[i];
-                }
-
-                // Копируем найденное слово без первого символа
-                for (int i = foundStart + 1; i < foundEnd; i++) {
-                    newData[newPos++] = Text.data[i];
-                }
-
-                // Копируем остаток после найденного слова
-                for (int i = foundEnd; i < size; i++) {
-                    newData[newPos++] = Text.data[i];
-                }
-
-                // Устанавливаем маркер
-                newData[newPos] = Text.mark;
-
-                // Заменяем старый массив
-                delete[] Text.data;
-                Text.data = newData;
-                size = newPos;
-                changed = true;
-
-                // Начинаем новый проход с начала строки
-                break; // выходим из внутреннего while, внешний while начнется заново
-            } else {
-                // Переходим к следующему слову
-                pos = wordEnd + 1;
-            }
-        }
-    }
-
-    // Вывод результата
-    ofstream fileout(FILEOUT);
+    // Основная часть программы
+    // Слияние строк и перебор всех слов
+    Process(&Text, &size);
 
     printstr(&fileout, &Text);
-    fileout << endl;
+
 
     delete[] Text.data;
     return 0;
@@ -195,16 +112,131 @@ unsigned char getmark(ifstream *filein){
 void str_in(ifstream *filein, String *Text, int size){
     unsigned char ch = 0;
     int i = 0;
-
-    // Заполняем массив
-    while (i < size){
-        *filein >> noskipws >> ch;
-
+    
+    // Читаем, пока не встретим маркер ИЛИ не кончится место в массиве
+    while (i < size && *filein >> noskipws >> ch && ch != Text->mark) {
         Text->data[i] = ch;
-
+        cout << ch;
         i++;
     }
     
-    // Добавляем символ-маркер в конец строки
-    Text->data[size] = Text->mark;
+    // Ставим маркер строго в конец реально считанных данных
+    Text->data[i] = Text->mark;
+}
+
+void Process(String *Text, int *size){
+
+    // Основная часть программы
+    // Слияние строк и перебор всех слов
+    String temp;
+    temp.mark = Text->mark;
+
+    bool changed = true;
+
+    while (changed) {
+        changed = false;
+
+        int pos = 0;
+
+        while (pos < *size) {
+
+            // пропускаем пробелы и переводы строки
+            while (pos < *size && 
+                (Text->data[pos] == ' ' || Text->data[pos] == '\n'))
+                pos++;
+
+            if (pos >= *size) break;
+
+            // определяем первое слово
+            int idx1 = pos;
+            int end1 = idx1;
+
+            while (end1 < *size &&
+                Text->data[end1] != ' ' &&
+                Text->data[end1] != '\n')
+                end1++;
+
+            int len1 = end1 - idx1;
+            char target = Text->data[end1 - 1];   // последняя буква
+
+            // ищем подходящее слово справа
+            int search = end1;
+            int idx2 = -1;
+            int end2 = -1;
+
+            while (search < *size) {
+
+                while (search < *size &&
+                    (Text->data[search] == ' ' ||
+                    Text->data[search] == '\n'))
+                    search++;
+
+                if (search >= *size) break;
+
+                if (Text->data[search] == target) {
+                    idx2 = search;
+                    end2 = idx2;
+
+                    while (end2 < *size &&
+                        Text->data[end2] != ' ' &&
+                        Text->data[end2] != '\n')
+                        end2++;
+
+                    break;
+                }
+
+                while (search < *size &&
+                    Text->data[search] != ' ' &&
+                    Text->data[search] != '\n')
+                    search++;
+            }
+
+            if (idx2 == -1) {
+                pos = end1;
+                continue;
+            }
+
+            // 1. сохраняем первое слово во временный буфер
+            temp.data = new char[len1 + 1];
+
+            for (int i = 0; i < len1; i++)
+                temp.data[i] = Text->data[idx1 + i];
+
+            temp.data[len1] = temp.mark;
+
+            // 2. удаляем первое слово (сдвиг влево)
+            for (int i = end1; i < *size; i++)
+                Text->data[i - len1] = Text->data[i];
+
+            (*size) -= len1;
+
+            // корректируем позицию второго слова
+            idx2 -= len1;
+            end2 -= len1;
+
+            // 3. освобождаем место перед вторым словом
+            for (int i = *size - 1; i >= idx2; i--)
+                Text->data[i + len1] = Text->data[i];
+
+            // увеличиваем размер
+            (*size) += len1;
+
+            // 4. вставляем первое слово
+            for (int i = 0; i < len1; i++)
+                Text->data[idx2 + i] = temp.data[i];
+
+            // 5. удаляем первый символ старого второго слова
+            for (int i = idx2 + len1; i < *size - 1; i++)
+                Text->data[i] = Text->data[i + 1];
+
+            (*size)--;  // уменьшаем на 1
+            Text->data[*size] = Text->mark;
+
+            delete[] temp.data;
+
+            changed = true;
+            
+            break;  // начинаем проход заново
+        }
+    }
 }
