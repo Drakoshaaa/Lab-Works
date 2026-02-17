@@ -3,8 +3,8 @@
 
 using namespace std;
 
-const char FILEIN[] = "string2.txt";
-const char FILEOUT[] = "out.txt";
+const char FILEIN[] = "assets/v2_string5.txt";
+const char FILEOUT[] = "assets/out.txt";
 
 struct String{
     char* data;
@@ -61,23 +61,33 @@ int main() {
     filein.seekg(pos, ios::beg);
 
     str_in(&filein, &Text, size);
+
+    // Контрольный вывод в консоль
+    cout << "Маркер: " << mark << endl;
+    cout << "Данный размер: " << fsize << endl;
+    cout << "Реальный размер строки: " << size << endl;
+    cout << "Исходная строка: " << endl;
+    for (int i = 0; Text.data[i] != Text.mark ; i++){
+        cout << Text.data[i];
+    }
+
+
     // Основная часть программы
     // Слияние строк и перебор всех слов
     Process(&Text, &size);
 
     printstr(&fileout, &Text);
-
+    cout << "\n\nПреобразованная строка была занесена в файл " << FILEOUT;
 
     delete[] Text.data;
     return 0;
 }
 
 void printstr(ofstream *fileout, String *Text){
-    int space = 0, words = 0;
+    int space = 0;
     for (int i = 0; Text->data[i] != Text->mark; i++){
         if (Text->data[i] == ' ' || Text->data[i] == '\n'){
             space++;
-            words++;
         } else{
             if (space > 0){
                 *fileout << " ";

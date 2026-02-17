@@ -3,14 +3,15 @@
 
 using namespace std;
 
-const char FILEIN[] = "string1.txt";
-const char FILEOUT[] = "out.txt";
+const char FILEIN[] = "assets/v1_string5.txt";
+const char FILEOUT[] = "assets/out.txt";
 
 struct String{
     char* data;
     char mark;  
 };
 
+void skip(ifstream *filein);
 void printstr(ofstream *fileout, String *Text);
 unsigned char getmark(ifstream *filein);
 void stopmark_analyse(ifstream *filein, unsigned char mark, unsigned char stop);
@@ -34,12 +35,16 @@ int main() {
     unsigned char mark, stop;
     mark = getmark(&filein);
     stop = getmark(&filein);
-    if (mark == 0 || stop == 0 || mark == stop) return 0;
-
+    if (mark == 0 || stop == 0) return 0;
+    else if (mark == stop) {
+        cerr << "Ошибка: Стоп-символ и символ-маркер не могут быть равны.\n";
+        return 0;
+    }
+    cout << "Pos: " << filein.tellg() << endl;
     stopmark_analyse(&filein, mark, stop);
-    
+    cout << "Pos: " << filein.tellg() << endl;
     int size = calcsize(&filein, mark, stop);
-
+    cout << "Pos: " << filein.tellg() << endl;
     filein.clear();
     filein.seekg(0, ios::beg);
     mark = getmark(&filein);
@@ -52,21 +57,35 @@ int main() {
     stopmark_analyse(&filein, mark, stop);
     str_in(&filein, &Text, size);
 
+
+    // Контрольный вывод в консоль
+    cout << "Маркер: " << mark << endl;
+    cout << "Стоп-символ: " << stop << endl;
+    cout << "Реальный размер строки: " << size << endl;
+    cout << "Исходная строка: " << endl;
+    for (int i = 0; Text.data[i] != Text.mark ; i++){
+        cout << Text.data[i];
+    }
+
     // Основная часть программы
-    // Слияние строк и перебор всех слов
+    // Слияние и перебор всех слов
     Process(&Text, &size);
 
     printstr(&fileout, &Text);
+    cout << "\n\nПреобразованная строка была занесена в файл " << FILEOUT;
 
     delete[] Text.data;
 }
 
+void skip(ifstream *filein){
+    while(filein->peek() == ' ' || filein->peek() == '\n') filein->get();
+}
+
 void printstr(ofstream *fileout, String *Text){
-    int space = 0, words = 0;
+    int space = 0;
     for (int i = 0; Text->data[i] != Text->mark; i++){
         if (Text->data[i] == ' ' || Text->data[i] == '\n'){
             space++;
-            words++;
         } else{
             if (space > 0){
                 *fileout << " ";
@@ -82,6 +101,8 @@ unsigned char getmark(ifstream *filein){
     unsigned char ch;
 
     if (!filein->eof()){
+        skip(filein);
+
         *filein >> ch;
 
         if ((ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122)){
@@ -107,10 +128,11 @@ void stopmark_analyse(ifstream *filein, unsigned char mark, unsigned char stop){
         *filein >> noskipws >> ch;
         if (ch == stop) numofstopchar++;
     }
-
     filein->clear();
     filein->seekg(0, ios::beg);
-    *filein >> ch >> ch;
+    mark = getmark(filein);
+    stop = getmark(filein);
+
     ch = 0;
 
     // Если стоп символов один или более - значит необходимо начинать чтение с первого такого символа
