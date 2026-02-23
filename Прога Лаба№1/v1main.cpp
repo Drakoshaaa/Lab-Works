@@ -37,14 +37,11 @@ int main() {
     stop = getmark(&filein);
     if (mark == 0 || stop == 0) return 0;
     else if (mark == stop) {
-        cerr << "Ошибка: Стоп-символ и символ-маркер не могут быть равны.\n";
+        cerr << "Ошибко: Стоп-символ и символ-маркер не могут быть равны.\n";
         return 0;
     }
-    cout << "Pos: " << filein.tellg() << endl;
     stopmark_analyse(&filein, mark, stop);
-    cout << "Pos: " << filein.tellg() << endl;
     int size = calcsize(&filein, mark, stop);
-    cout << "Pos: " << filein.tellg() << endl;
     filein.clear();
     filein.seekg(0, ios::beg);
     mark = getmark(&filein);
@@ -227,7 +224,7 @@ void Process(String *Text, int *size){
                     while (end2 < *size &&
                         Text->data[end2] != ' ' &&
                         Text->data[end2] != '\n')
-                        end2++;
+                        end2++; 
 
                     break;
                 }

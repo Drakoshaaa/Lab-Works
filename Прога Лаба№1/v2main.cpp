@@ -3,7 +3,7 @@
 
 using namespace std;
 
-const char FILEIN[] = "assets/v2_string5.txt";
+const char FILEIN[] = "assets/v2_string1.txt";
 const char FILEOUT[] = "assets/out.txt";
 
 struct String{
