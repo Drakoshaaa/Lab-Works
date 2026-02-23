@@ -3,7 +3,7 @@
 
 using namespace std;
 
-const char FILEIN[] = "assets/v1_string5.txt";
+const char FILEIN[] = "assets/v1_string1.txt";
 const char FILEOUT[] = "assets/out.txt";
 
 struct String{
@@ -55,20 +55,14 @@ int main() {
     str_in(&filein, &Text, size);
 
 
-    // Контрольный вывод в консоль и в текстовый файл
-    cout << "Маркер: " << mark << endl
-         << "Стоп-символ: " << stop << endl
-         << "Реальный размер строки: " << size << endl
-         << "Исходная строка: " << endl;
-    fileout << "Маркер: " << mark << endl
-         << "Стоп-символ: " << stop << endl
-         << "Реальный размер строки: " << size << endl
-         << "Исходная строка: " << endl;
+    // Контрольный вывод в консоль
+    cout << "Маркер: " << mark << endl;
+    cout << "Стоп-символ: " << stop << endl;
+    cout << "Реальный размер строки: " << size << endl;
+    cout << "Исходная строка: " << endl;
     for (int i = 0; Text.data[i] != Text.mark ; i++){
         cout << Text.data[i];
-        fileout << Text.data[i];
     }
-    fileout << endl << endl;
 
     // Основная часть программы
     // Слияние и перебор всех слов
@@ -86,7 +80,6 @@ void skip(ifstream *filein){
 
 void printstr(ofstream *fileout, String *Text){
     int space = 0;
-    *fileout << "Результат работы программы:\n";
     for (int i = 0; Text->data[i] != Text->mark; i++){
         if (Text->data[i] == ' ' || Text->data[i] == '\n'){
             space++;
